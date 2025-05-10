@@ -1,0 +1,4 @@
+openai
+python-binance
+pytest
+flake8
