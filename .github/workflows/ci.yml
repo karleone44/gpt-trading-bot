@@ -1,5 +1,3 @@
-name: CI Test
-
 name: CI smoke-test
 
 on:
@@ -31,4 +29,5 @@ jobs:
           key = os.getenv("OPENAI_API_KEY")
           print("Key length:", len(key or ""))
           EOF
+
 
