@@ -1,0 +1,29 @@
+name: CI Test
+
+# Запускаємо на кожен пуш в main
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  smoke-test:
+    runs-on: self-hosted       # наш self-hosted раннер
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: OpenAI smoke test
+        run: |
+          python - << 'EOF'
+          import os, openai
+          key = os.getenv("OPENAI_API_KEY")
+          print("Key length:", len(key or ""))
+          EOF
+Add minimal CI smoke-test
