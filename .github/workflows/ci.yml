@@ -20,14 +20,12 @@ jobs:
       - name: Install OpenAI client
         run: pip install openai
 
-      - name: OpenAI smoke test
+      - name: OpenAI smoke test (cross-shell)
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        # для будь-якої shell:
         run: |
-          python - << 'EOF'
-          import os
-          key = os.getenv("OPENAI_API_KEY")
-          print("Key length:", len(key or ""))
-          EOF
+          python -c "import os; key=os.getenv('OPENAI_API_KEY'); print('Key length:', len(key) if key else 'MISSING')"
+
 
 
