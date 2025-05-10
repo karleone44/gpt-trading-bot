@@ -6,41 +6,42 @@ on:
   pull_request:
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: self-hosted
 
     steps:
+      # 1. Завантажуємо код
       - uses: actions/checkout@v3
 
-      - name: Setup Python
+      # 2. Налаштовуємо Python без спроб писати в HKLM
+      - name: Setup Python 3.11
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: '3.11'
+          check-latest: true
 
-      - name: Install deps
-        run: pip install flake8 mypy pytest
+      # 3. Встановлюємо залежності
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Lint & type-check
+      # 4. Лінт і типізація
+      - name: Lint & Type-Check
         run: |
           flake8 .
           mypy .
 
-      - name: Run tests & backtests
+      # 5. Запускаємо тести
+      - name: Run Tests
         run: pytest --maxfail=1 --disable-warnings -q
 
+      # 6. Збірка Docker-образу
       - name: Build Docker image
         run: docker build -t yourdockerhubuser/gpt-trading-bot:latest .
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USER }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Push image
-        run: docker push yourdockerhubuser/gpt-trading-bot:latest
-
-      - name: Deploy to local
+      # 7. Деплой
+      - name: Deploy to local via SSH
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: localhost
