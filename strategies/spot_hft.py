@@ -6,17 +6,17 @@ class SpotHFT:
         self.config = config
 
     def generate_signals(self, data):
-        bid       = data['bid']
-        ask       = data['ask']
-        spread    = (ask - bid) / ask
+        bid    = data['bid']
+        ask    = data['ask']
+        spread = (ask - bid) / ask
         threshold = self.config.get('spread_threshold', 0.0000001)
 
-        # DEBUG: виводимо поточні значення
+        # DEBUG
         print(f"[DEBUG] bid={bid}, ask={ask}, spread={spread:.8f}, threshold={threshold}")
 
         signals = []
         if spread <= threshold:
-            signals.append({'side': 'buy',  'price': ask})
+            signals.append({'side': 'buy', 'price': ask})
         elif spread >= threshold:
             signals.append({'side': 'sell', 'price': bid})
         return signals
