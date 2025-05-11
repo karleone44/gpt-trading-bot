@@ -16,30 +16,30 @@ class DeltaNeutralStrategy:
           'ASSET2/USDT': {'bid': .., 'ask': ..},
         }
         """
-        # приклад: довільна логіка delta-neutral
-        p1 = (data["ASSET1/USDT"]["bid"] + data["ASSET1/USDT"]["ask"]) / 2
-        p2 = (data["ASSET2/USDT"]["bid"] + data["ASSET2/USDT"]["ask"]) / 2
-
-        # розрахунок обсягів
+        # Розподіл USDT між лонгом і шортом
         usdt_for_long = free_usdt * (1 - self.hedge_ratio)
         usdt_for_short = free_usdt * self.hedge_ratio
 
-        qty_long = usdt_for_long / p1 if p1 > 0 else 0
-        qty_short = usdt_for_short / p2 if p2 > 0 else 0
+        # Розрахунок qty за цінами виконання
+        ask1 = data["ASSET1/USDT"]["ask"]
+        bid2 = data["ASSET2/USDT"]["bid"]
+
+        qty_long = usdt_for_long / ask1 if ask1 > 0 else 0
+        qty_short = usdt_for_short / bid2 if bid2 > 0 else 0
 
         signals = []
         if qty_long > 0:
             signals.append({
                 "symbol": "ASSET1/USDT",
                 "side": "buy",
-                "price": data["ASSET1/USDT"]["ask"],
+                "price": ask1,
                 "qty": qty_long,
             })
         if qty_short > 0:
             signals.append({
                 "symbol": "ASSET2/USDT",
                 "side": "sell",
-                "price": data["ASSET2/USDT"]["bid"],
+                "price": bid2,
                 "qty": qty_short,
             })
         return signals
