@@ -1,4 +1,9 @@
+# orchestrator.py
+
+import os
 import time
+import yaml
+from dotenv import load_dotenv
 
 from exchange_connector import get_client
 from risk_manager import RiskManager
@@ -7,42 +12,50 @@ from strategies.spot_hft import SpotHFT
 from strategies.grid import GridStrategy
 from strategies.auto_invest import AutoInvest
 from strategies.tri_arb import TriArbStrategy
-
+from strategies.ai_signals import AISignals
 
 def fetch_balance_info(client):
+    """Отримати загальний та вільний баланс USDT."""
     bal = client.fetch_balance()
     total = bal.get("total", {})
     free_bal = bal.get("free", {})
     print("Вільний USDT:", free_bal.get("USDT", 0))
     return total, free_bal
 
-
-def run_cycle(client, rm, spot, grid, ai, tri):
+def run_cycle(client, rm, spot, grid, auto, ai, tri):
+    """
+    Один цикл роботи:
+      1) Spot-HFT
+      2) Grid
+      3) Auto-Invest
+      4) AI-Signals (GPT)
+      5) Tri-Arb
+    """
     total, free_bal = fetch_balance_info(client)
     free_usdt = free_bal.get("USDT", 0)
 
-    # Spot-HFT
+    # 1) Spot-HFT
     ticker = client.fetch_ticker("BTC/USDT")
-    bid = ticker["bid"]
-    ask = ticker["ask"]
+    bid, ask = ticker["bid"], ticker["ask"]
     s_signals = spot.generate_signals({"bid": bid, "ask": ask})
     s_filtered = rm.filter_signals(s_signals, total)
     execute_orders(client, s_filtered)
 
-    # Grid
+    # 2) Grid Strategy
     g_signals = grid.generate_signals({"bid": bid, "ask": ask})
     g_filtered = rm.filter_signals(g_signals, total)
     execute_orders(client, g_filtered)
 
-    # Auto-Invest
-    multi = {
-        s: {"price": client.fetch_ticker(s)["last"]}
-        for s in ai.symbols
-    }
-    ai_signals = ai.generate_signals(multi, free_usdt)
+    # 3) Auto-Invest DCA
+    prices = {s: {"price": client.fetch_ticker(s)["last"]} for s in auto.symbols}
+    auto_signals = auto.generate_signals(prices, free_usdt)
+    execute_orders(client, auto_signals)
+
+    # 4) AI-Signals via GPT
+    ai_signals = ai.generate_signals(prices, free_usdt)
     execute_orders(client, ai_signals)
 
-    # Tri-Arb
+    # 5) Triangular Arbitrage
     tri_data = {
         p: {
             "bid": client.fetch_ticker(p)["bid"],
@@ -53,36 +66,36 @@ def run_cycle(client, rm, spot, grid, ai, tri):
     tri_signals = tri.generate_signals(tri_data, free_usdt)
     execute_orders(client, tri_signals)
 
-
 def main():
+    """Точка входу: завантажуємо налаштування, ініціалізуємо модулі та запускаємо цикл."""
     print("[DEBUG] orchestrator.py завантажено")
+
+    # 1. Завантажити змінні середовища з config/.env
+    load_dotenv("config/.env")
+
+    # 2. Зчитати YAML-конфіг
+    with open("config/config.yaml", "r") as f:
+        cfg = yaml.safe_load(f)
+
+    # 3. Під’єднатися до біржі
     client = get_client()
 
-    rm = RiskManager({
-        "risk.max_drawdown_pct": 0.05,
-        "risk.daily_loss_limit": 0.02,
-    })
-    spot = SpotHFT(client, {"spread_threshold": 1e-7})
-    grid = GridStrategy(client, {"levels": [-0.01, 0.01], "qty_pct": 0.01})
-    ai = AutoInvest(
-        client,
-        {"symbols": ["BTC/USDT", "ETH/USDT"], "qty_pct": 0.005},
-    )
-    tri = TriArbStrategy(
-        client,
-        {
-            "pairs": ["BTC/USDT", "ETH/USDT", "ETH/BTC"],
-            "usdt_pct": 0.01,
-            "min_profit": 0.01,
-            "commission": 0.001,
-        },
-    )
+    # 4. Ініціалізувати всі модулі зі своїми секціями конфігурації
+    rm    = RiskManager(cfg.get("risk_manager", {}))
+    spot  = SpotHFT(client, cfg["strategies"]["spot_hft"])
+    grid  = GridStrategy(client, cfg["strategies"]["grid"])
+    auto  = AutoInvest(client, cfg["strategies"]["auto_invest"])
+    ai    = AISignals(client, cfg["strategies"]["ai_signals"])
+    tri   = TriArbStrategy(client, cfg["strategies"]["tri_arb"])
 
+    # 5. Інтервал циклу (секунди)
+    interval = cfg.get("orchestrator", {}).get("interval", 60)
+
+    # 6. Нескінченний цикл
     while True:
-        run_cycle(client, rm, spot, grid, ai, tri)
-        print("Очікуємо 60 сек…")
-        time.sleep(60)
-
+        run_cycle(client, rm, spot, grid, auto, ai, tri)
+        print(f"Очікуємо {interval} сек…")
+        time.sleep(interval)
 
 if __name__ == "__main__":
     main()
