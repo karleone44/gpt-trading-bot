@@ -21,3 +21,6 @@ fastapi
 uvicorn
 openai
 pyyaml
+ torch
++gym
++stable-baselines3
