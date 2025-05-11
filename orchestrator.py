@@ -1,36 +1,31 @@
 # orchestrator.py
 
 from exchange_connector import get_client
+from strategies.spot_hft import SpotHFT
 
-def fetch_market():
-    client = get_client()
-    # приклад — отримати дані по парі BTC/USDT
-    return client.fetch_ticker('BTC/USDT')
-
-def generate_signals(data):
-    # тимчасово — повертаємо порожній список сигналів
-    return []
-
-def execute_signals(signals):
-    # поки просто логіруємо
-    print("Сигнали:", signals)
-
-def main():
-    client = get_client()
+def fetch_balance_info(client):
     balance = client.fetch_balance()
     total = balance.get('total', {})
-    free = balance.get('free', {})
-
-    # Вивід балансу
+    free  = balance.get('free', {})
     print("Вільний USDT:", free.get('USDT', 0))
     print("Загальний баланс:", total)
 
-    # Fetch → Signal → Execute
-    data = fetch_market()
-    print("Ринкові дані:", data)
+def main():
+    client = get_client()
 
-    signals = generate_signals(data)
-    execute_signals(signals)
+    # 1) Виводимо баланс
+    fetch_balance_info(client)
+
+    # 2) Ініціалізуємо Spot-HFT стратегію
+    strategy = SpotHFT(client, {'spread_threshold': 0.001})
+
+    # 3) Отримуємо ринкові дані
+    ticker = client.fetch_ticker('BTC/USDT')
+    print("Ринкові дані:", {'bid': ticker['bid'], 'ask': ticker['ask']})
+
+    # 4) Генеруємо сигнали та виконуємо (тут — просто вивід)
+    signals = strategy.generate_signals(ticker)
+    print("Spot-HFT сигнали:", signals)
 
 if __name__ == "__main__":
     main()
