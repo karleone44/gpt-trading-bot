@@ -11,4 +11,9 @@ def get_client():
 if __name__ == "__main__":
     client = get_client()
     balance = client.fetch_balance()
-    print("Баланс Spot:", balance.get('total'))
+    total = balance.get('total', {})
+    free = balance.get('free', {})
+    # Виводимо повний баланс всіх активів
+    print("Повний баланс:", total)
+    # Виводимо вільний (available) баланс USDT
+    print("Вільний баланс USDT:", free.get('USDT', 0))
