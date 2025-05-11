@@ -17,8 +17,8 @@ def main():
     # 1) Вивід балансу
     fetch_balance_info(client)
 
-    # 2) Ініціалізація Spot-HFT стратегії
-    strategy = SpotHFT(client, {'spread_threshold': 0.0000001})  # поріг зменшено для чутливішого HFT
+    # 2) Ініціалізація Spot-HFT стратегії з debug
+    strategy = SpotHFT(client, {'spread_threshold': 0.0000001})  # оптимізований поріг
 
     # 3) Отримання ринкових даних по BTC/USDT
     ticker = client.fetch_ticker('BTC/USDT')
@@ -26,7 +26,7 @@ def main():
     ask = ticker['ask']
     print("Ринкові дані:", {'bid': bid, 'ask': ask})
 
-    # 4) Генерація Spot-HFT сигналів
+    # 4) Генерація Spot-HFT сигналів з debug-виводом
     signals = strategy.generate_signals({'bid': bid, 'ask': ask})
     print("Spot-HFT сигнали:", signals)
 
