@@ -1,11 +1,3 @@
 [flake8]
-# Збільшуємо максимальну довжину рядка до 120 символів
 max-line-length = 120
-
-# Ігноруємо правила, які зараз дають помилки:
-ignore =
-    E221,  # multiple spaces before operator
-    E231,  # missing whitespace after ',' or ':'
-    E302,  # expected 2 blank lines, found 1
-    E305,  # expected 2 blank lines after class or function
-    W391   # blank line at end of file
+ignore = E221,E231,E302,E305,W391
