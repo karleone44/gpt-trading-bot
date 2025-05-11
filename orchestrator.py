@@ -3,6 +3,9 @@
 from exchange_connector import get_client
 from strategies.spot_hft import SpotHFT
 
+# DEBUG: перевірка завантаження файлу
+print("[DEBUG] orchestrator.py завантажено")
+
 def fetch_balance_info(client):
     balance = client.fetch_balance()
     total   = balance.get('total', {})
@@ -17,10 +20,10 @@ def main():
     # 1) Вивід балансу
     fetch_balance_info(client)
 
-    # 2) Ініціалізація Spot-HFT стратегії з підвищеною чутливістю
+    # 2) Ініціалізація Spot-HFT стратегії
     strategy = SpotHFT(client, {'spread_threshold': 0.0000001})
 
-    # 3) Отримання ринкових даних по BTC/USDT
+    # 3) Ринкові дані по BTC/USDT
     ticker = client.fetch_ticker('BTC/USDT')
     bid = ticker['bid']
     ask = ticker['ask']
