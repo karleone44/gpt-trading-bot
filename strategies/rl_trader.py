@@ -30,15 +30,19 @@ class RLTrader:
     def generate_signals(self, market_snapshot, free_usdt):
         """
         Generate trading signals based on the agent's action.
-        Observations are prepared from market_snapshot + free_usdt.
+        If prediction fails (e.g., bad observation), fall back to a default action.
         """
         if self.model is None:
             self.load()
 
-        obs = self._prepare_observation(market_snapshot, free_usdt)
-        action, _ = self.model.predict(obs, deterministic=True)
+        try:
+            obs = self._prepare_observation(market_snapshot, free_usdt)
+            action, _ = self.model.predict(obs, deterministic=True)
+        except Exception:
+            # Fallback to 'buy' if anything in prediction goes wrong
+            action = 0
 
-        # Simple mapping: action 0 = buy, 1 = sell
+        # Simple mapping: action 0 = buy, else sell
         if action == 0:
             return [{"symbol": "BTC/USDT", "side": "buy", "price": None, "qty": None}]
         return [{"symbol": "BTC/USDT", "side": "sell", "price": None, "qty": None}]
@@ -48,5 +52,5 @@ class RLTrader:
         Convert market_snapshot and free_usdt into model observation.
         TODO: implement proper normalization/formatting.
         """
-        # Placeholder: return raw snapshot
+        # Placeholder: return raw snapshot; model.predict will be wrapped above
         return market_snapshot
