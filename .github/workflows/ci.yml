@@ -7,36 +7,34 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up Python
+      - name: Встановити Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Встановити залежності
         run: pip install -r requirements.txt
 
-      - name: Lint
-        shell: bash
-        run: |
-          flake8 . --max-line-length=120 \
-            --ignore=E221,E231,E302,E305,W391
+      - name: Перевірка стилю
+        run: flake8 . --max-line-length=120 --ignore=E221,E231,E302,E305,W391
 
-      - name: Run all tests
-        run: |
-          pytest || exit 0
+      - name: Запуск усіх тестів
+        run: pytest
 
-      - name: Backtesting tests
+      - name: Тести backtesting
+        shell: pwsh
         run: |
-          if [ -d backtesting ]; then
+          if (Test-Path 'backtesting') {
             pytest backtesting/
-          else
-            echo "⏭ no backtesting/ directory, skipping"
-          fi
+          } else {
+            Write-Host "⏭ backtesting/ відсутня, пропускаємо"
+          }
 
-      - name: Paper-trading tests
+      - name: Тести paper_trading
+        shell: pwsh
         run: |
-          if [ -d paper_trading ]; then
+          if (Test-Path 'paper_trading') {
             pytest paper_trading/
-          else
-            echo "⏭ no paper_trading/ directory, skipping"
-          fi
+          } else {
+            Write-Host "⏭ paper_trading/ відсутня, пропускаємо"
+          }
