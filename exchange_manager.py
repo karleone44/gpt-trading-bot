@@ -8,25 +8,20 @@ class ExchangeManager:
 
     def __init__(self, config):
         self.clients = {}
-        exch_cfg = config.get("exchanges", {})
-
-        # Binance
-        bin_cfg = exch_cfg.get("binance", {})
-        if bin_cfg.get("api_key") and bin_cfg.get("secret"):
-            self.clients["binance"] = ccxt.binance({
-                "apiKey": os.getenv("BINANCE_API_KEY"),
-                "secret": os.getenv("BINANCE_SECRET"),
-                "enableRateLimit": True,
-            })
-
-        # KuCoin
-        ku_cfg = exch_cfg.get("kucoin", {})
-        if ku_cfg.get("api_key") and ku_cfg.get("secret"):
-            self.clients["kucoin"] = ccxt.kucoin({
-                "apiKey": os.getenv("KUCOIN_API_KEY"),
-                "secret": os.getenv("KUCOIN_SECRET"),
-                "enableRateLimit": True,
-            })
+        # Проходимо по всіх біржах із конфігу
+        for name in config.get("exchanges", {}):
+            key_env = f"{name.upper()}_API_KEY"
+            secret_env = f"{name.upper()}_SECRET"
+            api_key = os.getenv(key_env)
+            secret = os.getenv(secret_env)
+            # Якщо є і ключ, і секрет, та ccxt підтримує біржу — створюємо клієнт
+            if api_key and secret and hasattr(ccxt, name):
+                exchange_cls = getattr(ccxt, name)
+                self.clients[name] = exchange_cls({
+                    "apiKey": api_key,
+                    "secret": secret,
+                    "enableRateLimit": True,
+                })
 
     def get(self, name="binance"):
         """Повернути клієнт заданої біржі (за замовчуванням Binance)."""
