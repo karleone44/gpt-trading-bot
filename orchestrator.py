@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from exchange_manager import ExchangeManager
 from risk_manager import RiskManager
 from execution_module import execute_orders
-from exchange_connector import get_client
+
 from strategies.spot_hft import SpotHFT
 from strategies.grid import GridStrategy
 from strategies.auto_invest import AutoInvest
@@ -96,4 +96,6 @@ def main():
         time.sleep(interval)
 
 if __name__ == "__main__":
+    main()
+
     main()
