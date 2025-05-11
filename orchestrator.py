@@ -13,18 +13,21 @@ def fetch_balance_info(client):
 def main():
     client = get_client()
 
-    # 1) Вивід балансу
+    print("Старт Orchestrator")
+    # Вивід балансу
     fetch_balance_info(client)
 
-    # 2) Ініціалізація Spot-HFT стратегії
+    # Ініціалізація Spot-HFT стратегії з порогом спреду 0.1%
     strategy = SpotHFT(client, {'spread_threshold': 0.001})
 
-    # 3) Отримання ринкових даних
+    # Отримуємо ринкові дані
     ticker = client.fetch_ticker('BTC/USDT')
-    print("Ринкові дані:", {'bid': ticker['bid'], 'ask': ticker['ask']})
+    bid = ticker['bid']
+    ask = ticker['ask']
+    print("Ринкові дані:", {'bid': bid, 'ask': ask})
 
-    # 4) Генерація та обробка сигналів
-    signals = strategy.generate_signals(ticker)
+    # Генеруємо сигнали
+    signals = strategy.generate_signals({'bid': bid, 'ask': ask})
     print("Spot-HFT сигнали:", signals)
 
 if __name__ == "__main__":
