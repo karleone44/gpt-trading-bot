@@ -1,26 +1,19 @@
 # requirements.txt
-# Бібліотеки для AI-модулів, роботи з YAML, dotenv та ключами API
+
 openai
 pyyaml
 python-dotenv
-
-# Основні торгові та технічні залежності
 python-binance
 ccxt
-
-# Тестування та лінтинг
 pytest
 flake8
-
-# Додаткові утиліти
 websockets
 aiohttp
 optuna
 torch
 fastapi
 uvicorn
-openai
-pyyaml
- torch
-+gym
-+stable-baselines3
+
+# Для RLTrader
+gym
+stable-baselines3
