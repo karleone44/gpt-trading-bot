@@ -18,7 +18,7 @@ def main():
     fetch_balance_info(client)
 
     # 2) Ініціалізація Spot-HFT стратегії
-    strategy = SpotHFT(client, {'spread_threshold': 0.001})
+    strategy = SpotHFT(client, {'spread_threshold': 0.0000001})  # поріг зменшено для чутливішого HFT
 
     # 3) Отримання ринкових даних по BTC/USDT
     ticker = client.fetch_ticker('BTC/USDT')
