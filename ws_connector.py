@@ -1,6 +1,5 @@
 # ws_connector.py
 
-import asyncio
 import json
 import websockets
 
