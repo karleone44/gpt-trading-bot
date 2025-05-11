@@ -1,12 +1,11 @@
 # tests/test_exchange_manager.py
 
-import os
 import pytest
 from exchange_manager import ExchangeManager
 
 @pytest.fixture(autouse=True)
 def fake_env(monkeypatch):
-    # Підміняємо змінні середовища для API ключів
+    # Підміняємо змінні середовища для ключів API
     monkeypatch.setenv("BINANCE_API_KEY", "key1")
     monkeypatch.setenv("BINANCE_SECRET", "sec1")
     monkeypatch.setenv("KUCOIN_API_KEY", "key2")
