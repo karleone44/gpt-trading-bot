@@ -1,5 +1,4 @@
 # strategies/spot_hft.py
-
 class SpotHFT:
     def __init__(self, client, config):
         self.client = client
@@ -11,12 +10,12 @@ class SpotHFT:
         spread    = (ask - bid) / ask
         threshold = self.config.get('spread_threshold', 0.001)
 
-        # Додаємо debug-вивід
+        # Debug - вивід значень
         print(f"[DEBUG] bid={bid}, ask={ask}, spread={spread:.6f}, threshold={threshold}")
 
         signals = []
         if spread <= threshold:
-            signals.append({'side': 'buy',  'price': ask})
+            signals.append({'side': 'buy', 'price': ask})
         elif spread >= threshold:
             signals.append({'side': 'sell', 'price': bid})
         return signals
