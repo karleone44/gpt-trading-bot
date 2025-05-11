@@ -14,10 +14,10 @@ def main():
     print("Старт Orchestrator")
     client = get_client()
 
-    # 1) Баланс
+    # 1) Вивід балансу
     fetch_balance_info(client)
 
-    # 2) Ініціалізація Spot-HFT
+    # 2) Ініціалізація Spot-HFT стратегії
     strategy = SpotHFT(client, {'spread_threshold': 0.001})
 
     # 3) Отримання ринкових даних
@@ -26,7 +26,7 @@ def main():
     ask = ticker['ask']
     print("Ринкові дані:", {'bid': bid, 'ask': ask})
 
-    # 4) Генерація сигналів
+    # 4) Генерація Spot-HFT сигналів
     signals = strategy.generate_signals({'bid': bid, 'ask': ask})
     print("Spot-HFT сигнали:", signals)
 
