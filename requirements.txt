@@ -13,7 +13,6 @@ optuna
 torch
 fastapi
 uvicorn
-
-# Для RLTrader
 gym
 stable-baselines3
+shimmy>=2.0
