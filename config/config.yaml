@@ -1,26 +1,59 @@
 # config/config.yaml
 
+# Параметри ризик-менеджменту
+risk_manager:
+  max_drawdown_pct: 0.05
+  daily_loss_limit: 0.02
+
+# Налаштування оркестратора
+orchestrator:
+  interval: 60
+
+# Параметри стратегій
 strategies:
-  rl_trader:
-    env_id: CartPole-v1
-    episodes: 1000
-    model_path: rl_trader.zip
+  spot_hft:
+    spread_threshold: 1e-7
+
+  grid:
+    levels: [-0.01, 0.01]
+    qty_pct: 0.01
+
+  auto_invest:
+    symbols: ["BTC/USDT", "ETH/USDT"]
+    qty_pct: 0.005
+
+  tri_arb:
+    pairs: ["BTC/USDT", "ETH/USDT", "ETH/BTC"]
+    usdt_pct: 0.01
+    min_profit: 0.01
+    commission: 0.001
+
+  delta_neutral:
+    window: 60
+    hedge_ratio: 0.5
+
   ai_signals:
-    # Модель GPT
     model: gpt-4
-    # API-ключ з .env або Secrets
     openai_api_key: ${OPENAI_API_KEY}
-    # Шаблон prompt, куди підставлятиметься JSON snapshot
     prompt_template: |
       Given the market snapshot:
       {snapshot}
       Generate up to 3 trading signals as a JSON list:
       [
-        {
-          "symbol": "BTC/USDT",
-          "side": "buy",
-          "price": 50000.0,
-          "qty": 0.001
-        },
+        {"symbol":"BTC/USDT","side":"buy","price":...,"qty":...},
         ...
       ]
+
+  rl_trader:
+    env_id: CartPole-v1
+    episodes: 1000
+    model_path: rl_trader.zip
+
+# Налаштування multi-exchange
+exchanges:
+  binance:
+    api_key: ${BINANCE_API_KEY}
+    secret:  ${BINANCE_SECRET}
+  kucoin:
+    api_key: ${KUCOIN_API_KEY}
+    secret:  ${KUCOIN_SECRET}
