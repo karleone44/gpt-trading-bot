@@ -2,44 +2,62 @@ import openai
 import json
 
 class AISignals:
-    """C9: Генеруємо сигнали через GPT-4 із зрозумілим контролем і виходами."""
+    """C9: Генеруємо сигнали через GPT-4 із підтримкою фейкових dict у тестах."""
 
     def __init__(self, client, config):
+        self.client = client
         self.model = config.get("model", "gpt-4")
         self.prompt_template = config.get(
             "prompt_template",
             "Given the market snapshot:\n{snapshot}\n"
-            "Generate up to 3 trading signals as a JSON list, "
-            "each with symbol, side (buy/sell), price (float), qty (float)."
+            "Generate up to 3 trading signals as JSON list."
         )
-        openai.api_key = config.get("openai_api_key")
+        api_key = config.get("openai_api_key")
+        if api_key:
+            openai.api_key = api_key
 
     def generate_signals(self, market_snapshot, free_usdt):
         # Формуємо prompt
         prompt = self.prompt_template.format(snapshot=json.dumps(market_snapshot))
+
         # Викликаємо GPT
-        resp = openai.ChatCompletion.create(
+        response = openai.ChatCompletion.create(
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2,
             max_tokens=200,
         )
 
-        # Парсимо відповідь як JSON
-        text = resp.choices[0].message.content
+        # Витягуємо choices незалежно від типу response
+        if isinstance(response, dict):
+            choices = response.get("choices", [])
+        else:
+            choices = getattr(response, "choices", [])
+
+        if not choices:
+            return []
+
+        first = choices[0]
+
+        # Витягаємо content незалежно від структури first
+        if isinstance(first, dict):
+            message = first.get("message", {})
+            text = message.get("content", "")
+        else:
+            text = first.message.content
+
+        # Парсимо JSON і валідуємо поля
         try:
-            signals = json.loads(text)
-            # Базова валідація структури
-            valid = []
-            for s in signals:
-                if {"symbol","side","price","qty"} <= s.keys():
-                    valid.append({
+            raw = json.loads(text)
+            signals = []
+            for s in raw:
+                if {"symbol", "side", "price", "qty"} <= set(s.keys()):
+                    signals.append({
                         "symbol": s["symbol"],
                         "side": s["side"],
                         "price": float(s["price"]),
                         "qty": float(s["qty"]),
                     })
-            return valid
+            return signals
         except Exception:
-            # у випадку невдалої відповіді — порожній список
             return []
