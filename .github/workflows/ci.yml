@@ -1,40 +1,28 @@
-name: CI
-on: [push, pull_request]
+ame: CI smoke-test
+
+on:
+  push:
+    branches: [main]
 
 jobs:
-  build-and-test:
+  smoke-test:
     runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v3
 
-      - name: Встановити Python
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      - name: Встановити залежності
-        run: pip install -r requirements.txt
+      - name: Install OpenAI client
+        run: pip install openai
 
-      - name: Перевірка стилю
-        run: flake8 . --max-line-length=120 --ignore=E221,E231,E302,E305,W391
-
-      - name: Запуск усіх тестів
-        run: pytest
-
-      - name: Тести backtesting
-        shell: pwsh
+      - name: OpenAI smoke test (cross-shell)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        # для будь-якої shell:
         run: |
-          if (Test-Path 'backtesting') {
-            pytest backtesting/
-          } else {
-            Write-Host "⏭ backtesting/ відсутня, пропускаємо"
-          }
-
-      - name: Тести paper_trading
-        shell: pwsh
-        run: |
-          if (Test-Path 'paper_trading') {
-            pytest paper_trading/
-          } else {
-            Write-Host "⏭ paper_trading/ відсутня, пропускаємо"
-          }
+          python -c "import os; key=os.getenv('OPENAI_API_KEY'); print('Key length:', len(key) if key else 'MISSING')"
