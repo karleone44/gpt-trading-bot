@@ -22,7 +22,7 @@ def run_cycle(client, rm, spot, grid, ai, tri):
     total, free = fetch_balance_info(client)
     free_usdt = free.get('USDT', 0)
 
-    # 1) Spot-HFT
+    # Spot-HFT
     t = client.fetch_ticker('BTC/USDT')
     bid, ask = t['bid'], t['ask']
     print("Spot-HFT market:", {'bid': bid, 'ask': ask})
@@ -30,34 +30,29 @@ def run_cycle(client, rm, spot, grid, ai, tri):
     f_signals = rm.filter_signals(s_signals, total)
     execute_orders(client, f_signals)
 
-    # 2) Grid
+    # Grid
     g_signals = grid.generate_signals({'bid': bid, 'ask': ask})
     gf = rm.filter_signals(g_signals, total)
     execute_orders(client, gf)
 
-    # 3) Auto-Invest
-    multi = {}
-    for sym in ai.symbols:
-        tick = client.fetch_ticker(sym)
-        multi[sym] = {'price': tick['last']}
+    # Auto-Invest
+    multi = {sym: {'price': client.fetch_ticker(sym)['last']} for sym in ai.symbols}
     ai_signals = ai.generate_signals(multi, free_usdt)
     execute_orders(client, ai_signals)
 
-    # 4) Triangular Arbitrage
-    data = {}
-    for p in tri.pairs:
-        tick = client.fetch_ticker(p)
-        data[p] = {'bid': tick['bid'], 'ask': tick['ask']}
-    tri_signals = tri.generate_signals(data, free_usdt)
+    # Tri-Arb
+    tri_data = {
+        p: {'bid': client.fetch_ticker(p)['bid'], 'ask': client.fetch_ticker(p)['ask']}
+        for p in tri.pairs
+    }
+    tri_signals = tri.generate_signals(tri_data, free_usdt)
     execute_orders(client, tri_signals)
 
 def main():
     print("Старт Orchestrator")
     client = get_client()
 
-    # Ініціалізації
     rm   = RiskManager({'risk.max_drawdown_pct': 0.05, 'risk.daily_loss_limit': 0.02})
-    rm.initialize({'USDT': 0})  # потім перепризначимо реальний
     spot = SpotHFT(client, {'spread_threshold': 0.0000001})
     grid = GridStrategy(client, {'levels': [-0.01, 0.01], 'qty_pct': 0.01})
     ai   = AutoInvest(client, {'symbols': ['BTC/USDT', 'ETH/USDT'], 'qty_pct': 0.005})
