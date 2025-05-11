@@ -1,22 +1,35 @@
-# strategies/spot_hft.py
-
 class SpotHFT:
+    """C1: High-frequency spot strategy."""
+
     def __init__(self, client, config):
         self.client = client
-        self.config = config
+        self.threshold = config.get("spread_threshold", 1e-7)
 
     def generate_signals(self, data):
-        bid    = data['bid']
-        ask    = data['ask']
+        bid = data["bid"]
+        ask = data["ask"]
         spread = (ask - bid) / ask
-        threshold = self.config.get('spread_threshold', 0.0000001)
 
-        # DEBUG
-        print(f"[DEBUG] bid={bid}, ask={ask}, spread={spread:.8f}, threshold={threshold}")
+        # Купуємо тільки якщо спред строго менший за поріг
+        if spread < self.threshold:
+            return [
+                {
+                    "symbol": "BTC/USDT",
+                    "side": "buy",
+                    "price": ask,
+                    "qty": None,
+                }
+            ]
 
-        signals = []
-        if spread <= threshold:
-            signals.append({'side': 'buy', 'price': ask})
-        elif spread >= threshold:
-            signals.append({'side': 'sell', 'price': bid})
-        return signals
+        # Якщо спред більший або рівний порогу — продаємо
+        if spread >= self.threshold:
+            return [
+                {
+                    "symbol": "BTC/USDT",
+                    "side": "sell",
+                    "price": bid,
+                    "qty": None,
+                }
+            ]
+
+        return []
