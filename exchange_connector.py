@@ -1,5 +1,6 @@
-from dotenv import load_dotenv
 import os
+
+from dotenv import load_dotenv
 import ccxt
 
 
@@ -7,6 +8,7 @@ load_dotenv()
 
 
 def get_client():
+    """Returns a configured CCXT Binance client."""
     return ccxt.binance({
         "apiKey": os.getenv("BINANCE_API_KEY"),
         "secret": os.getenv("BINANCE_SECRET"),
@@ -15,4 +17,5 @@ def get_client():
 
 
 if __name__ == "__main__":
-    print(get_client().fetch_balance())
+    client = get_client()
+    print(client.fetch_balance())
