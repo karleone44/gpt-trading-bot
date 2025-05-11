@@ -1,11 +1,30 @@
-   - name: Install dependencies
-     run: pip install -r requirements.txt
+name: Build and Test
 
-   - name: Install package
-     run: pip install -e .
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
-   - name: Lint
-     run: flake8 ...
+jobs:
+  build-and-test:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
 
-   - name: Run tests
-     run: pytest tests/
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install package editable
+        run: pip install -e .
+
+      - name: Lint
+        run: flake8 --max-line-length=120 --ignore=E221,E231,E302,E305,W391,F841
+
+      - name: Run tests
+        run: pytest tests/
