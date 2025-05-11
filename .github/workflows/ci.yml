@@ -1,31 +1,22 @@
-name: CI smoke-test
-
-on:
-  push:
-    branches: [main]
+name: CI
+on: [push, pull_request]
 
 jobs:
-  smoke-test:
+  build-and-test:
     runs-on: self-hosted
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Python
+      - uses: actions/checkout@v3
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-
-      - name: Install OpenAI client
-        run: pip install openai
-
-      - name: OpenAI smoke test (cross-shell)
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        # для будь-якої shell:
-        run: |
-          python -c "import os; key=os.getenv('OPENAI_API_KEY'); print('Key length:', len(key) if key else 'MISSING')"
-
-
-
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Lint
+        run: flake8 .
+      - name: Run tests
+        run: pytest
+      - name: Backtesting tests
+        run: pytest backtesting/
+      - name: Paper-trading tests
+        run: pytest paper_trading/
