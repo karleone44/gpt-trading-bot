@@ -20,7 +20,7 @@ def main():
     # 2) Ініціалізація Spot-HFT стратегії
     strategy = SpotHFT(client, {'spread_threshold': 0.001})
 
-    # 3) Отримання ринкових даних
+    # 3) Отримання ринкових даних по BTC/USDT
     ticker = client.fetch_ticker('BTC/USDT')
     bid = ticker['bid']
     ask = ticker['ask']
