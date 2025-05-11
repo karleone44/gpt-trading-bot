@@ -4,6 +4,7 @@ from exchange_connector import get_client
 from strategies.spot_hft import SpotHFT
 from risk_manager import RiskManager
 from execution_module import execute_orders
+from strategies.grid import GridStrategy  # для Grid-стратегії
 
 # DEBUG: перевірка, що файл завантажився
 print("[DEBUG] orchestrator.py завантажено")
@@ -30,23 +31,25 @@ def main():
     })
     rm.initialize(total)
 
-    # 3) Ініціалізація Spot-HFT стратегії
+    # 3) Spot-HFT стратегія
     strategy = SpotHFT(client, {'spread_threshold': 0.0000001})
-
-    # 4) Отримання ринкових даних по BTC/USDT
     ticker = client.fetch_ticker('BTC/USDT')
-    bid = ticker['bid']
-    ask = ticker['ask']
+    bid = ticker['bid']; ask = ticker['ask']
     print("Ринкові дані:", {'bid': bid, 'ask': ask})
 
-    # 5) Генерація та фільтрація сигналів
     signals = strategy.generate_signals({'bid': bid, 'ask': ask})
     print("Spot-HFT сигнали (до ризику):", signals)
     filtered = rm.filter_signals(signals, total)
     print("Spot-HFT сигнали (після ризику):", filtered)
-
-    # 6) Виконання фільтрованих сигналів
     execute_orders(client, filtered)
+
+    # 4) Grid-стратегія
+    grid = GridStrategy(client, {'levels': [-0.01, 0.01], 'qty_pct': 0.01})
+    grid_signals = grid.generate_signals({'bid': bid, 'ask': ask})
+    print("Grid сигнали (до ризику):", grid_signals)
+    grid_filtered = rm.filter_signals(grid_signals, total)
+    print("Grid сигнали (після ризику):", grid_filtered)
+    execute_orders(client, grid_filtered)
 
 if __name__ == '__main__':
     main()
