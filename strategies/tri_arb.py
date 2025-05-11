@@ -17,7 +17,6 @@ class TriArbStrategy:
 
         profit = net - ut
 
-        # debug print (необовʼязково)
         print(
             f"[DEBUG TriArb] ut={ut:.6f}, "
             f"btc={btc:.8f}, "
@@ -28,7 +27,7 @@ class TriArbStrategy:
         )
 
         if profit >= self.min_profit:
-            signals = [
+            return [
                 {
                     'symbol': 'BTC/USDT',
                     'side': 'buy',
@@ -48,6 +47,5 @@ class TriArbStrategy:
                     'qty': eth,
                 },
             ]
-            return signals
 
         return []
