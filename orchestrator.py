@@ -5,6 +5,7 @@ from strategies.spot_hft import SpotHFT
 from risk_manager import RiskManager
 from execution_module import execute_orders
 from strategies.grid import GridStrategy
+from strategies.auto_invest import AutoInvest
 
 # DEBUG: перевірка, що файл завантажився
 print("[DEBUG] orchestrator.py завантажено")
@@ -23,6 +24,7 @@ def main():
 
     # 1) Баланс
     total, free = fetch_balance_info(client)
+    free_usdt = free.get('USDT', 0)
 
     # 2) Risk Manager
     rm = RiskManager({
@@ -51,6 +53,20 @@ def main():
     grid_filtered = rm.filter_signals(grid_signals, total)
     print("Grid сигнали (після ризику):", grid_filtered)
     execute_orders(client, grid_filtered)
+
+    # 5) Auto-Invest Strategy
+    ai = AutoInvest(client, {
+        'symbols': ['BTC/USDT', 'ETH/USDT'],
+        'qty_pct': 0.005
+    })
+    # Збираємо останню ціну для кожної монети
+    multi_ticker = {}
+    for sym in ai.symbols:
+        t = client.fetch_ticker(sym)
+        multi_ticker[sym] = {'price': t['last']}
+    ai_signals = ai.generate_signals(multi_ticker, free_usdt)
+    print("Auto-Invest сигнали:", ai_signals)
+    execute_orders(client, ai_signals)
 
 if __name__ == '__main__':
     main()
