@@ -1,16 +1,15 @@
 # tests/test_dashboard.py
 
-import time
 from fastapi.testclient import TestClient
 import pytest
-from dashboard.app import app, Metrics
+from dashboard.app import app
 
 client = TestClient(app)
 
 def test_health():
-    resp = client.get("/health")
-    assert resp.status_code == 200
-    data = resp.json()
+    response = client.get("/health")
+    assert response.status_code == 200
+    data = response.json()
     assert data["status"] == "ok"
     assert isinstance(data["timestamp"], float)
 
@@ -21,22 +20,18 @@ def test_metrics_endpoints():
         "latency_ms": 150.5,
         "open_positions": 3
     }
-    # POST /metrics
-    post = client.post("/metrics", json=payload)
-    assert post.status_code == 200
-    assert post.json() == payload
+    post_resp = client.post("/metrics", json=payload)
+    assert post_resp.status_code == 200
+    assert post_resp.json() == payload
 
-    # GET /metrics
-    get = client.get("/metrics")
-    assert get.status_code == 200
-    assert get.json() == payload
+    get_resp = client.get("/metrics")
+    assert get_resp.status_code == 200
+    assert get_resp.json() == payload
 
 @pytest.mark.parametrize("endpoint", ["/metrics", "/health"])
 def test_invalid_metrics_get_after_clear(endpoint):
-    # Очищаємо внутрішнє сховище
-    from dashboard.app import _last_run
-    # прямо обнуляємо
-    import dashboard.app as mod; mod._last_run = None
+    import dashboard.app as mod
+    mod._last_run = None
 
     resp = client.get(endpoint)
     if endpoint == "/metrics":
