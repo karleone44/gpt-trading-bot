@@ -1,9 +1,18 @@
+# requirements.txt
+# Бібліотеки для AI-модулів, роботи з YAML, dotenv та ключами API
 openai
+pyyaml
+python-dotenv
+
+# Основні торгові та технічні залежності
 python-binance
 ccxt
-python-dotenv
+
+# Тестування та лінтинг
 pytest
 flake8
+
+# Додаткові утиліти
 websockets
 aiohttp
 optuna
