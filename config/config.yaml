@@ -1,6 +1,10 @@
 # config/config.yaml
 
 strategies:
+  rl_trader:
+    env_id: CartPole-v1
+    episodes: 1000
+    model_path: rl_trader.zip
   ai_signals:
     # Модель GPT
     model: gpt-4
