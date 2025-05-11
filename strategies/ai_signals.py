@@ -1,3 +1,5 @@
+# strategies/ai_signals.py
+
 import openai
 import json
 
@@ -9,8 +11,7 @@ class AISignals:
         self.model = config.get("model", "gpt-4")
         self.prompt_template = config.get(
             "prompt_template",
-            "Given the market snapshot:\n{snapshot}\n"
-            "Generate up to 3 trading signals as JSON list."
+            "Given the market snapshot:\n{snapshot}\nGenerate up to 3 trading signals as JSON list."
         )
         api_key = config.get("openai_api_key")
         if api_key:
@@ -28,7 +29,7 @@ class AISignals:
             max_tokens=200,
         )
 
-        # Витягуємо choices незалежно від типу response
+        # Підтримуємо і dict, і OpenAIObject
         if isinstance(response, dict):
             choices = response.get("choices", [])
         else:
@@ -37,16 +38,16 @@ class AISignals:
         if not choices:
             return []
 
-        first = choices[0]
+        first_choice = choices[0]
 
-        # Витягаємо content незалежно від структури first
-        if isinstance(first, dict):
-            message = first.get("message", {})
+        # Витягаємо content
+        if isinstance(first_choice, dict):
+            message = first_choice.get("message", {})
             text = message.get("content", "")
         else:
-            text = first.message.content
+            text = first_choice.message.content
 
-        # Парсимо JSON і валідуємо поля
+        # Парсимо JSON
         try:
             raw = json.loads(text)
             signals = []
