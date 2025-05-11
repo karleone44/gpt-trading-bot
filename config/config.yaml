@@ -1,0 +1,22 @@
+# config/config.yaml
+
+strategies:
+  ai_signals:
+    # Модель GPT
+    model: gpt-4
+    # API-ключ з .env або Secrets
+    openai_api_key: ${OPENAI_API_KEY}
+    # Шаблон prompt, куди підставлятиметься JSON snapshot
+    prompt_template: |
+      Given the market snapshot:
+      {snapshot}
+      Generate up to 3 trading signals as a JSON list:
+      [
+        {
+          "symbol": "BTC/USDT",
+          "side": "buy",
+          "price": 50000.0,
+          "qty": 0.001
+        },
+        ...
+      ]
