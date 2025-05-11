@@ -174,3 +174,4 @@ cython_debug/
 .pypirc
 # Секретні ключі
 .env
+config/.env
