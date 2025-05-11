@@ -8,27 +8,14 @@ class RiskManager:
         self.daily_loss = 0.0
 
     def initialize(self, total_balance):
-        """
-        Викликається на старті сесії, щоб зафіксувати початковий баланс.
-        """
         self.start_balance = total_balance.get('USDT', 0)
         self.daily_loss = 0.0
 
     def update_daily_loss(self, pnl):
-        """
-        Оновлюємо накопичений збиток за день.
-        pnл < 0 додає збиток.
-        """
         if pnl < 0:
             self.daily_loss += abs(pnl)
 
     def filter_signals(self, signals, balance):
-        """
-        Фільтруємо сигнали за правилами:
-        - Не перевищувати max_drawdown_pct від стартового балансу
-        - Не перевищувати daily_loss_limit
-        balance: словник total балансу
-        """
         if self.start_balance is None:
             self.initialize(balance)
         total_usdt = balance.get('USDT', 0)
