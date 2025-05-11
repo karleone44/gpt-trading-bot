@@ -4,3 +4,9 @@ ccxt
 python-dotenv
 pytest
 flake8
+websockets
+aiohttp
+optuna
+torch
+fastapi
+uvicorn
