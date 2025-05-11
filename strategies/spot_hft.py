@@ -1,5 +1,4 @@
 # strategies/spot_hft.py
-
 class SpotHFT:
     def __init__(self, client, config):
         self.client = client
