@@ -1,4 +1,6 @@
 openai
 python-binance
+ccxt
+python-dotenv
 pytest
 flake8
