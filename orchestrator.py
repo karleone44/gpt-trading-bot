@@ -14,10 +14,10 @@ def main():
     print("Старт Orchestrator")
     client = get_client()
 
-    # 1) Вивід балансу
+    # 1) Баланс
     fetch_balance_info(client)
 
-    # 2) Ініціалізація Spot-HFT стратегії
+    # 2) Ініціалізація Spot-HFT
     strategy = SpotHFT(client, {'spread_threshold': 0.001})
 
     # 3) Отримання ринкових даних
