@@ -6,7 +6,7 @@ from risk_manager import RiskManager
 from execution_module import execute_orders
 from strategies.grid import GridStrategy
 
-# DEBUG: перевірка, що файл завантажився
+# DEBUG: перевіряємо, що файл завантажився
 print("[DEBUG] orchestrator.py завантажено")
 
 def fetch_balance_info(client):
@@ -54,4 +54,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-це 
