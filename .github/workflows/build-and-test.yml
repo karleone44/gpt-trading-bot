@@ -1,5 +1,3 @@
-# .github/workflows/build-and-test.yml
-
 name: Build and Test
 
 on:
@@ -24,9 +22,6 @@ jobs:
 
       - name: Install OpenAI and PyYAML
         run: pip install openai pyyaml
-
-      - name: Install package editable
-        run: pip install -e .
 
       - name: Lint
         run: flake8 --max-line-length=120 --ignore=E221,E231,E302,E305,W391,F841
