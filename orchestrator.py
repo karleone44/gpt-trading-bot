@@ -1,5 +1,11 @@
+# orchestrator.py
 import time
 import yaml
+import logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s %(message)s'
+)
 from dotenv import load_dotenv
 
 from exchange_manager import ExchangeManager
@@ -12,90 +18,107 @@ from strategies.auto_invest import AutoInvest
 from strategies.tri_arb import TriArbStrategy
 from strategies.delta_neutral import DeltaNeutralStrategy
 from strategies.ai_signals import AISignals
-from strategies.rl_trader import RLTrader
+#from strategies.rl_trader import RLTraderStrategy
+
+load_dotenv("config/.env")
+
+def load_config(path: str) -> dict:
+    with open(path, "r") as f:
+        return yaml.safe_load(f)
 
 
 def fetch_balance_info(client):
-    """Отримати загальний та вільний баланс USDT."""
     bal = client.fetch_balance()
     total = bal.get("total", {})
-    free_bal = bal.get("free", {})
-    print("Вільний USDT:", free_bal.get("USDT", 0))
-    return total, free_bal
+    free = bal.get("free", {})
+    print("Вільний USDT:", free.get("USDT", 0))
+    return total, free
 
 
-def run_cycle(client, rm, spot, grid, auto, ai, tri, dn, rl):
-    total, free_bal = fetch_balance_info(client)
+def fetch_market_snapshot(client):
+    # Повертає словник ticker-даних для усіх необхідних пар
+    symbols = ["BTC/USDT", "ETH/USDT"]
+    snapshot = {}
+    for sym in symbols:
+        t = client.fetch_ticker(sym)
+        snapshot[sym] = {"bid": t["bid"], "ask": t["ask"], "last": t.get("last")}
+    return snapshot
+
+
+def run_cycle(client, rm, spot, grid, auto, ai, tri, dn):
+    # 1. Баланси
+    total_bal, free_bal = fetch_balance_info(client)
     free_usdt = free_bal.get("USDT", 0)
 
-    # 1) Spot-HFT
-    ticker = client.fetch_ticker("BTC/USDT")
-    bid, ask = ticker["bid"], ticker["ask"]
-    s_signals = spot.generate_signals({"bid": bid, "ask": ask})
-    execute_orders(client, rm.filter_signals(s_signals, total))
+    # 2. Формуємо список пар для арбітражу з конфігурації TriArbStrategy
+    pairs = tri.pairs  # наприклад ["BTC/USDT","ETH/USDT","ETH/BTC"]
 
-    # 2) Grid Strategy
-    g_signals = grid.generate_signals({"bid": bid, "ask": ask})
-    execute_orders(client, rm.filter_signals(g_signals, total))
+    # 3. Збір ринкових даних лише по цим парам
+    market_snapshot = {}
+    for pair in pairs:
+        ticker = client.fetch_ticker(pair)
+        market_snapshot[pair] = {
+            "bid": float(ticker["bid"]),
+            "ask": float(ticker["ask"]),
+            "last": float(ticker["last"])
+        }
 
-    # 3) Auto-Invest
-    prices = {s: {"price": client.fetch_ticker(s)["last"]} for s in auto.symbols}
-    auto_signals = auto.generate_signals(prices, free_usdt)
-    execute_orders(client, auto_signals)
+    # 4. Генеруємо сигнали
+    signals = []
 
-    # 4) AI-Signals
-    ai_signals = ai.generate_signals(prices, free_usdt)
-    execute_orders(client, ai_signals)
+    # 4.1 Spot-HFT та Grid тільки для USDT пар
+    usdt_pairs = [p for p in pairs if p.endswith("/USDT")]
+    for pair in usdt_pairs:
+        data = market_snapshot[pair]
+        signals += spot.generate_signals(data)
+        signals += grid.generate_signals(data)
 
-    # 5) Triangular Arbitrage
-    tri_data = {p: {"bid": client.fetch_ticker(p)["bid"], "ask": client.fetch_ticker(p)["ask"]} for p in tri.pairs}
-    tri_signals = tri.generate_signals(tri_data, free_usdt)
-    execute_orders(client, tri_signals)
+    # 4.2 Auto-Invest: передаємо ціни лише USDT пар
+    prices = {p: {"price": market_snapshot[p]["last"]} for p in usdt_pairs}
+    signals += auto.generate_signals(prices, free_usdt)
 
-    # 6) Delta-Neutral
-    dn_signals = dn.generate_signals(tri_data, free_usdt)
-    execute_orders(client, dn_signals)
+    # 4.3 AI-Signals: вся карта даних
+    signals += ai.generate_signals(market_snapshot, free_usdt)
 
-    # 7) RL-Trader
-    rl_signals = rl.generate_signals(prices, free_usdt)
-    execute_orders(client, rl_signals)
+    # 4.4 Triangular Arbitrage: та сама карта
+    signals += tri.generate_signals(market_snapshot, free_usdt)
+
+    # 4.5 Delta-Neutral: теж
+    signals += dn.generate_signals(market_snapshot, free_usdt)
+
+
+    # 5. Фільтрація сигналів і виконання ордерів
+    filtered = rm.filter_signals(signals, total_bal)
+    valid = [s for s in filtered if isinstance(s, dict) and 'side' in s]
+    execute_orders(client, valid)
+
 
 
 def main():
-    """Точка входу: налаштувати конфіг, клієнта та запустити нескінченний цикл."""
-    print("[DEBUG] orchestrator.py завантажено")
-
-    # Завантаження змінних середовища
-    load_dotenv("config/.env")
-
-    # Зчитування YAML конфігу
-    with open("config/config.yaml", "r") as f:
-        cfg = yaml.safe_load(f)
-
-    # Ініціалізація ExchangeManager та вибір основної біржі
+    print(">>> ORCHESTRATOR started ", flush=True)
+    cfg = load_config("config/config.yaml")
     exch_mgr = ExchangeManager(cfg)
     client = exch_mgr.get("binance")
+    rm = RiskManager(cfg.get("risk_manager", {}))
 
-    # Ініціалізація RiskManager і стратегій
-    rm   = RiskManager(cfg.get("risk_manager", {}))
+    # Ініціалізація стратегій
     spot = SpotHFT(client, cfg["strategies"]["spot_hft"])
     grid = GridStrategy(client, cfg["strategies"]["grid"])
     auto = AutoInvest(client, cfg["strategies"]["auto_invest"])
-    ai   = AISignals(client, cfg["strategies"]["ai_signals"])
-    tri  = TriArbStrategy(client, cfg["strategies"]["tri_arb"])
-    dn   = DeltaNeutralStrategy(client, cfg["strategies"]["delta_neutral"])
-    rl   = RLTrader(client, cfg["strategies"]["rl_trader"])
+    ai = AISignals(cfg["strategies"]["ai_signals"])
+    tri = TriArbStrategy(client, cfg["strategies"]["tri_arb"])
+    dn = DeltaNeutralStrategy(client, cfg["strategies"]["delta_neutral"])
+   #rl = RLTraderStrategy(client, cfg["strategies"]["rl_trader"])
 
-    # Інтервал між циклами
     interval = cfg.get("orchestrator", {}).get("interval", 60)
-
-    # Нескінченний цикл виконання
+    logging.debug("orchestrator.py завантажено")
     while True:
-        run_cycle(client, rm, spot, grid, auto, ai, tri, dn, rl)
+        try:
+            run_cycle(client, rm, spot, grid, auto, ai, tri, dn)
+        except Exception as e:
+            logging.error(f"Error in run_cycle: {e}")
         print(f"Очікуємо {interval} сек…")
         time.sleep(interval)
 
 if __name__ == "__main__":
-    main()
-
     main()

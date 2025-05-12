@@ -39,3 +39,37 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: pytest tests/
+
+name: Build and Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install OpenAI and PyYAML
+        run: pip install openai pyyaml
+
+      - name: Lint
+        run: flake8 --max-line-length=120 --ignore=E221,E231,E302,E305,W391,F841
+
+      - name: Run tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: pytest tests/
+
