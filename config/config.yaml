@@ -1,32 +1,34 @@
-# config/config.yaml
-
 orchestrator:
   interval: 60
 
 risk_manager:
   max_drawdown_pct: 0.05
+  daily_loss_limit: 0.02
 
-daily_loss_limit: 0.02
+exchanges:
+  binance:
+    api_key: ${BINANCE_API_KEY}
+    secret: ${BINANCE_SECRET}
+  kucoin:
+    api_key: ${KUCOIN_API_KEY}
+    secret: ${KUCOIN_SECRET}
 
 strategies:
   spot_hft:
+    symbol: BTC/USDT
     spread_threshold: 1e-7
 
   grid:
+    symbol: BTC/USDT
     levels: [-0.01, 0.01]
     qty_pct: 0.01
 
   auto_invest:
-    symbols:
-      - BTC/USDT
-      - ETH/USDT
+    symbols: ["BTC/USDT", "ETH/USDT"]
     qty_pct: 0.005
 
   tri_arb:
-    pairs:
-      - BTC/USDT
-      - ETH/USDT
-      - ETH/BTC
+    pairs: ["BTC/USDT", "ETH/USDT", "ETH/BTC"]
     usdt_pct: 0.01
     min_profit: 0.01
     commission: 0.001
@@ -34,27 +36,15 @@ strategies:
   delta_neutral:
     window: 60
     hedge_ratio: 0.5
-    symbols:
-      - BTC/USDT
-      - ETH/USDT
+    asset1: BTC/USDT
+    asset2: ETH/USDT
 
   ai_signals:
-    model: gpt-4
-    openai_api_key: ${OPENAI_API_KEY}
     prompt_template: |
-      Given market snapshot:
+      Given the market snapshot:
       {snapshot}
       Generate up to 3 trading signals as JSON list.
+    model: gpt-4
 
   rl_trader:
-    env_id: CartPole-v1
-    episodes: 1000
     model_path: rl_trader
-
-exchanges:
-  binance:
-    api_key: ${o7W1tRztxJgtPtM684MJlo4LBw04oRNslvbxXAeXG7vFckKDr9nXe0Sc5OKR3MMK}
-    secret: ${mqIYJINtJrtRKO3DA8PxIwxapWCEuZ9fayFzRiFAhiua8raXroTYLAHkHasHs7P4}
-  kucoin:
-    api_key: ${KUCOIN_API_KEY}
-    secret: ${KUCOIN_SECRET}
