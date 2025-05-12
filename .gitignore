@@ -188,3 +188,4 @@ __pycache__/
 .pytest_cache/
 kubectl/
 k8s/
+kubectl
