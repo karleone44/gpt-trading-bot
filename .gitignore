@@ -181,3 +181,10 @@ config/.env
 config.env
 .env.save
 config/.env
+
+# 🧹 dev artifacts
+.venv/
+__pycache__/
+.pytest_cache/
+kubectl/
+k8s/
